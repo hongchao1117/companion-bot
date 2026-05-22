@@ -1,4 +1,9 @@
-from __future__ import annotations
+#!/usr/bin/env python3
+"""Write the complete avatar.py file."""
+import ast
+from pathlib import Path
+
+content = r'''from __future__ import annotations
 
 import logging
 import math
@@ -186,3 +191,19 @@ def _description_from_identity(brain: Brain) -> str:
     if personality:
         parts.append("Personality: " + personality.group(1).strip()[:400])
     return ". ".join(parts)
+'''
+
+# Validate syntax
+try:
+    ast.parse(content)
+    print("Syntax OK")
+    dest = Path("src/companion/avatar.py")
+    dest.write_text(content, encoding="utf-8")
+    print(f"Written to {dest}")
+except SyntaxError as e:
+    print(f"Syntax error at line {e.lineno}: {e.msg}")
+    lines = content.split("\n")
+    if e.lineno:
+        for i in range(max(0, e.lineno - 3), min(len(lines), e.lineno + 2)):
+            marker = ">>>" if i + 1 == e.lineno else "   "
+            print(f"{marker} {i+1}: {lines[i]}")

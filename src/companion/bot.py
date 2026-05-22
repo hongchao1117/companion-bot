@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import datetime, timedelta, timezone
 
@@ -56,6 +57,8 @@ class CompanionBot(discord.Client):
         logger.info("Allowed owners: %s", allowed)
         if self.brain.is_fresh_start():
             logger.info("Fresh brain — meeting someone new")
+        # Try generating avatar on startup if pending
+        asyncio.create_task(self._maybe_avatar())
 
     async def on_message(self, message: discord.Message) -> None:
         if message.author.bot or not message.content:

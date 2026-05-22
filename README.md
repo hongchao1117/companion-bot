@@ -30,72 +30,67 @@ The system prompt enforces:
 - One natural question at a time, not interrogation
 - Reciprocity (the bot shares itself too)
 - Natural memory ("you mentioned climbing" not "message #7")
-- Stage-aware tone: `awakening` → `bonding` → `companions`
+- Stage-aware tone: `awakening` => `bonding` => `companions`
 
 ### Proactive outreach
 
-A background loop checks whether outreach is due. Intervals depend on relationship stage and how many proactive messages went unanswered (backs off instead of spamming). Each outreach message is generated with an explicit motivation — wonder, a callback, something it remembered — not "checking in because schedule."
+A background loop checks whether outreach is due. Intervals depend on relationship stage and how many proactive messages went unanswered (backs off instead of spamming). Each outreach message is generated with an explicit motivation — wonder, a callback, something it remembered — not "checking in because schedule".
 
 ### Avatar
 
-When the conversation establishes enough visual identity, memory consolidation can flag `avatar_pending`. The bot then uses DALL·E 3, saves the URL into `identity.md`, and optionally sets the Discord profile picture.
+When the conversation establishes enough visual identity, memory consolidation can flag `avatar_pending`. The bot then generates an avatar image using **Pillow** based on the personality description — keywords like "flame", "flower", "dream", or "gentle" map to distinct visual styles. The avatar is saved locally and set as the Discord profile picture.
 
 ## Setup
 
 ### 1. Create a Discord application
 
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
-2. **New Application** → **Bot** → **Reset Token** (save for `.env`)
+2. **New Application** => **Bot** => **Reset Token** (save for `.env`)
 3. Enable **Message Content Intent** under Privileged Gateway Intents
-4. OAuth2 → URL Generator: scopes `bot`, `applications.commands`; permissions at minimum **Send Messages**, **Read Message History**, **Attach Files** (for avatars). Use the URL to add the bot to your server (optional; DMs are the main channel).
+4. OAuth2 => URL Generator: scopes `bot`, `applications.commands`; permissions at minimum **Send Messages**, **Read Message History**, **Attach Files**. Use the URL to add the bot to your server.
 
-### 2. Get your Discord user ID
+### 2. Configure `.env`
 
-Settings → Advanced → **Developer Mode** → right-click your profile → **Copy User ID**
+Copy `.env.example` to `.env` and fill in:
 
-### 3. One-command setup (recommended)
+| Variable | Description |
+|---|---|
+| `DISCORD_TOKEN` | Your Discord bot token |
+| `OPENAI_API_KEY` | API key for LLM (OpenAI / DeepSeek / any OpenAI-compatible provider) |
+| `OPENAI_MODEL` | Model name: `deepseek-chat` for DeepSeek, `gpt-4o-mini` for OpenAI |
+| `OWNER_USERNAMES` | Comma-separated Discord usernames allowed to talk to the bot |
+| `OWNER_DISCORD_ID` | (Optional) Numeric Discord user ID |
+
+The bot auto-detects DeepSeek models and switches base URL accordingly. Set `OPENAI_BASE_URL` for other providers.
+
+### 3. Install dependencies
 
 ```powershell
-cd companion-bot
-.\scripts\start.ps1
+python -m venv .venv
+.venv/Scripts/pip install -r requirements.txt
 ```
 
-First time, if `.env` is empty, the script will tell you to run the wizard:
+### 4. Run
 
 ```powershell
-.\.venv\Scripts\python scripts\setup_wizard.py
+python run.py
 ```
 
-Or configure manually: copy `.env.example` to `.env` and fill in `DISCORD_TOKEN`, `OWNER_DISCORD_ID`, `OPENAI_API_KEY`.
+Open a **DM** with your bot and say hello.
 
-### 4. Check setup (optional)
+### Test without Discord
 
-Verify `.env` and brain files without starting Discord:
+```powershell
+python scripts/chat_cli.py
+```
+
+This uses the same brain files and memory consolidation in your terminal.
+
+### Check setup
 
 ```powershell
 python scripts/check_setup.py
 ```
-
-This prints masked tokens, whether required variables are set, and a snapshot of `identity.md` / `relationship.md`.
-
-### 5. Run
-
-```powershell
-python run.py
-# or: .\scripts\start.ps1
-```
-
-Open a **DM** with your bot and say hello. It only talks to `OWNER_DISCORD_ID` in DMs.
-
-### Test without Discord (optional)
-
-If you only have an OpenAI key:
-
-```powershell
-.\.venv\Scripts\python scripts\chat_cli.py
-```
-
-This uses the same brain files and memory consolidation in your terminal.
 
 ## Project layout
 
@@ -105,11 +100,19 @@ companion-bot/
   src/companion/
     bot.py               # Discord client
     agent.py             # replies + memory consolidation
-    memory.py            # identity.md + relationship.md
+    memory.py            # identity.md + relationship.md (the brain)
     proactive.py         # motivated outreach scheduler
-    avatar.py            # optional DALL·E avatar
+    avatar.py            # Pillow-based avatar generation
     prompts.py           # behavior prompts
-  data/brain/            # created at runtime (gitignored)
+    llm.py               # LLM wrapper (DeepSeek, OpenAI, etc.)
+    config.py            # Settings from .env
+  scripts/
+    chat_cli.py          # terminal-based test chat
+    check_setup.py       # verify .env and brain files
+    export_brain.py      # export brain for submission
+    setup_wizard.py      # interactive .env creator
+  data/brain/            # identity.md + relationship.md (gitignored)
+  submission/            # exported brain files for delivery
 ```
 
 ## Design notes
@@ -117,12 +120,15 @@ companion-bot/
 - **No database** — markdown files are the brain; you can read and edit them by hand.
 - **Restart-safe** — delete nothing; restart the process and it continues as the same person.
 - **Reset** — stop the bot, delete `data/brain/*.md`, restart for a truly fresh meeting.
+- **LLM-agnostic** — works with any OpenAI-compatible API (OpenAI, DeepSeek, Together, Groq, etc.).
+- **Avatar from personality** — uses Pillow to generate a visual avatar matching the bot's personality, no DALL·E required.
 
 ## Requirements
 
 - Python 3.11+
-- OpenAI API access (chat + JSON memory passes; DALL·E 3 for avatars)
+- An OpenAI-compatible LLM API key (OpenAI, DeepSeek, Together, Groq, etc.)
 - Discord bot token with message content intent
+- Pillow (for avatar generation)
 
 ## License
 
