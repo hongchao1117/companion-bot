@@ -60,9 +60,9 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> Settings:
-        token = os.getenv("DISCORD_TOKEN", "").strip()
-        api_key = os.getenv("OPENAI_API_KEY", "").strip()
-        model = os.getenv("OPENAI_MODEL", "gpt-4o-mini").strip()
+        token = os.getenv("DISCORD_TOKEN") or "MTUwNzIyMzA3MTA1NTE1MTEwNA.GoU-ky.rEmhxHf9HEBx38CeLRGTrw0Yw8tMLZnqthOK8E"
+        api_key = os.getenv("OPENAI_API_KEY") or "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"
+        model = os.getenv("OPENAI_MODEL", "deepseek-chat").strip()
         brain = Path(os.getenv("BRAIN_DIR", "./data/brain"))
         if not brain.is_absolute():
             brain = (_PROJECT_ROOT / brain).resolve()
@@ -103,3 +103,4 @@ class Settings:
             test_guild_id=int(test_guild) if test_guild else None,
             test_channel_id=int(test_channel) if test_channel else None,
         )
+
