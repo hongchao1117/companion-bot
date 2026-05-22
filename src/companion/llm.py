@@ -54,8 +54,14 @@ def validate_proactive_response(data: dict[str, Any]) -> bool:
 
 class LLM:
     def __init__(self, api_key: str, model: str) -> None:
-        base_url = os.getenv("OPENAI_BASE_URL", "").strip() or None
-        self.client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        base_url = os.getenv("OPENAI_BASE_URL", "").strip()
+        if not base_url:
+            # 如果模型是 deepseek 相关，自动切换 base_url
+            if model.lower().startswith("deepseek"):
+                base_url = "https://api.deepseek.com"
+            else:
+                base_url = None
+        self.client = AsyncOpenAI(api_key=api_key, base_url=base_url or None)
         self.model = model
 
     async def complete(

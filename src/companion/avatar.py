@@ -36,60 +36,33 @@ async def maybe_generate_avatar(
         _bump_avatar_attempts(brain, meta)
         return False
 
-    prompt = safe_format(AVATAR_IMAGE_PROMPT, description=description)
-    try:
-        result = await client.images.generate(
-            model="dall-e-3",
-            prompt=prompt,
-            size="1024x1024",
-            n=1,
-        )
-        url = result.data[0].url
-    except Exception:
-        logger.exception("Avatar image generation failed")
-        _bump_avatar_attempts(brain, meta, generation_failed=True)
-        return False
-
-    if not url:
-        _bump_avatar_attempts(brain, meta, generation_failed=True)
-        return False
-
+    # DeepSeek doesn't support image generation — skip DALL·E,
+    # just mark avatar as described in identity for future use.
     identity = brain.read_identity()
-    identity = re.sub(
-        r"(- image_url: ).*",
-        rf"\1{url}",
-        identity,
-        count=1,
-    )
+
+    # Update generated flag
     identity = re.sub(
         r"(- generated: ).*",
-        r"\1true",
+        r"\1false",
         identity,
         count=1,
     )
+    # Update description if it's still placeholder
+    if "- description:" in identity and "_not chosen" in identity:
+        identity = re.sub(
+            r"(- description: ).*",
+            rf"\1{description}",
+            identity,
+            count=1,
+        )
     brain.write_identity(identity)
 
     meta = brain.read_meta()
     meta["avatar_pending"] = False
     meta["avatar_pending_attempts"] = 0
-    meta["avatar_url"] = url
     brain.write_meta(meta)
 
-    assets = brain.brain_dir / "avatar.png"
-    try:
-        import aiohttp
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as resp:
-                data = await resp.read()
-        async with aiofiles.open(assets, "wb") as f:
-            await f.write(data)
-        if apply_to_discord:
-            await apply_to_discord(BytesIO(data))
-    except Exception:
-        logger.exception("Could not download or apply avatar")
-
-    return True
+    return False
 
 
 def _bump_avatar_attempts(
