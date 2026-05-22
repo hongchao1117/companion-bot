@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import os
 import re
 from typing import Any
 
@@ -53,7 +54,8 @@ def validate_proactive_response(data: dict[str, Any]) -> bool:
 
 class LLM:
     def __init__(self, api_key: str, model: str) -> None:
-        self.client = AsyncOpenAI(api_key=api_key)
+        base_url = os.getenv("OPENAI_BASE_URL", "").strip() or None
+        self.client = AsyncOpenAI(api_key=api_key, base_url=base_url)
         self.model = model
 
     async def complete(
@@ -125,3 +127,4 @@ class LLM:
                     await asyncio.sleep(0.8 * attempt)
         assert last_error is not None
         raise last_error
+

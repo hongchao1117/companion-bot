@@ -125,3 +125,4 @@ def _description_from_identity(brain: Brain) -> str:
     if personality:
         parts.append(f"Personality: {personality.group(1).strip()[:400]}")
     return ". ".join(parts)
+
