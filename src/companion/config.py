@@ -60,7 +60,7 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> Settings:
-        token = os.getenv("DISCORD_TOKEN") or "MTUwNzIyMzA3MTA1NTE1MTEwNA.GoU-ky.rEmhxHf9HEBx38CeLRGTrw0Yw8tMLZnqthOK8E"
+        token = os.getenv("DISCORD_TOKEN") or "MTUwNzIyMzA3MTA1NTE1MTEwNA.GDpiBV.nUSVMSNMri5chFf0qv5YKyypic1zZccNe2ZPO0"
         api_key = os.getenv("OPENAI_API_KEY") or "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"
         model = os.getenv("OPENAI_MODEL", "deepseek-chat").strip()
         brain = Path(os.getenv("BRAIN_DIR", "./data/brain"))
